@@ -306,22 +306,3 @@ pytest tests/ -v
     ├── generate_audio.py           # Генерация тестовых аудио (edge-tts)
     └── calculate_wer.py            # Расчёт WER (jiwer)
 ```
-
----
-
-## Критерии оценки (самооценка)
-
-| Критерий | Баллы | Реализация |
-|---|---|---|
-| Pipeline архитектура | 25 | OpenWebUI Pipelines (pipeline.py + pipelines/) + FastAPI + LangGraph граф |
-| ASR качество | 20 | faster-whisper medium, 8kHz поддержка, pyannote/эвристика, WER-скрипт |
-| Multi-Agent логика | 25 | 4 агента с детальными промптами, LangGraph оркестрация, JSON-вывод |
-| Код и архитектура | 15 | Type hints, structlog JSON-логи, pytest (unit + integration), pydantic-settings |
-| Документация | 10 | README на русском, Swagger UI, .env.example, архитектурная схема |
-| Живое демо | 5 | Docker Compose, healthcheck, HTTPS (деплой по инструкции) |
-
----
-
-## Затраченное время
-
-Приблизительно **12–15 часов**: планирование архитектуры, реализация, тесты, документация.
