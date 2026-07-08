@@ -50,6 +50,20 @@ User (browser)
 | **faster-whisper medium / int8** | Best CPU speed/accuracy tradeoff; `beam_size=1` + `vad_filter` keeps latency < 60 s for files up to 5 min |
 | **Groq / llama-3.3-70b-versatile** | Near-zero cost, OpenAI-compatible, fast inference; any OpenAI-compatible endpoint works via `OPENAI_API_BASE_URL` |
 
+### Which LLM to use?
+
+Any **OpenAI-compatible** endpoint works — swap `OPENAI_API_BASE_URL` + `LLM_MODEL` in `.env`, no code changes needed.
+
+| Provider | Free tier | Latency | Notes |
+| --- | --- | --- | --- |
+| **Groq** (`api.groq.com`) | ✅ 30 rpm free | ~1–2 s | Recommended — fastest inference, reliable free tier |
+| **OpenRouter** (`openrouter.ai`) | ✅ many free models | 2–5 s | Wide model selection; free models have rate limits |
+| **Together AI** (`api.together.ai`) | ✅ $1 credit | 2–4 s | Good for llama/mistral variants |
+| **OpenAI** | ❌ paid | ~2 s | `gpt-4o-mini` works well, ~$0.01 per call |
+| Local (Ollama) | ✅ free | 10–60 s | Requires GPU for acceptable speed |
+
+**Why Groq by default:** no GPU required on the server side, free tier covers hundreds of calls per day, and llama-3.3-70b produces reliable structured JSON in Russian — which is the critical requirement for this pipeline.
+
 ---
 
 ## MTBank — Речевая аналитика контакт-центра
