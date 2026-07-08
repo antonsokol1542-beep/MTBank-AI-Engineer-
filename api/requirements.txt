@@ -1,0 +1,40 @@
+# Web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+
+# Data validation
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# ASR
+faster-whisper==1.1.0
+
+# Speaker diarization (optional — requires HF_TOKEN)
+pyannote.audio==3.3.2
+
+# LLM / Agents
+openai==1.57.0
+langgraph==0.2.59
+langchain==0.3.9
+langchain-openai==0.2.11
+
+# HTTP client
+httpx==0.28.1
+aiofiles==24.1.0
+
+# Configuration
+python-dotenv==1.0.1
+
+# Logging
+structlog==24.4.0
+
+# Audio processing
+soundfile==0.12.1
+librosa==0.10.2
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-httpx==0.35.0
+respx==0.21.1

@@ -1,0 +1,86 @@
+version: "3.8"
+
+services:
+  # --------------------------------------------------------
+  # OpenWebUI — Chat interface
+  # --------------------------------------------------------
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: mtbank_openwebui
+    restart: unless-stopped
+    ports:
+      - "${OPENWEBUI_PORT:-3000}:8080"
+    volumes:
+      - openwebui_data:/app/backend/data
+    environment:
+      - OPENAI_API_BASE_URL=http://pipelines:9099
+      - OPENAI_API_KEY=${PIPELINES_API_KEY:-0p3n-w3bu!}
+      - WEBUI_AUTH=false
+    depends_on:
+      pipelines:
+        condition: service_started
+    networks:
+      - mtbank_net
+
+  # --------------------------------------------------------
+  # OpenWebUI Pipelines — Pipeline execution engine
+  # --------------------------------------------------------
+  pipelines:
+    image: ghcr.io/open-webui/pipelines:main
+    container_name: mtbank_pipelines
+    restart: unless-stopped
+    ports:
+      - "9099:9099"
+    volumes:
+      - ./pipelines:/app/pipelines
+      - pipelines_cache:/root/.cache
+      - openwebui_data:/openwebui_data:ro
+    environment:
+      - PIPELINES_API_KEY=${PIPELINES_API_KEY:-0p3n-w3bu!}
+      - API_BASE_URL=http://api:8000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_BASE_URL=${OPENAI_API_BASE_URL:-https://api.openai.com/v1}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini}
+      - HF_TOKEN=${HF_TOKEN:-}
+      - WHISPER_MODEL=${WHISPER_MODEL:-medium}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - mtbank_net
+
+  # --------------------------------------------------------
+  # FastAPI Backend — ASR + Multi-agent analytics
+  # --------------------------------------------------------
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: mtbank_api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./audio_samples:/app/audio_samples:ro
+      - api_models_cache:/root/.cache
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - mtbank_net
+
+networks:
+  mtbank_net:
+    driver: bridge
+
+volumes:
+  openwebui_data:
+  pipelines_cache:
+  api_models_cache:

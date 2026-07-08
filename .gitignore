@@ -1,0 +1,36 @@
+# Environment — contains real secrets, never commit
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# Whisper / ML model cache
+*.bin
+*.pt
+*.onnx
+models/
+.cache/
+
+# Test data — large audio files
+test_data/*.wav
+test_data/*.mp3
+test_data/*.ogg
+test_data/*.flac
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Docker volumes
+openwebui_data/
+pipelines_data/
