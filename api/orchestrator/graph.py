@@ -50,6 +50,14 @@ def build_graph() -> Any:
     """Build and compile the LangGraph analysis pipeline."""
     settings = get_settings()
 
+    # Without a key the OpenAI client sends an empty "Bearer " header and httpx
+    # dies with an opaque LocalProtocolError. Fail fast with an actionable message.
+    if not settings.openai_api_key:
+        raise RuntimeError(
+            "OPENAI_API_KEY is not set — the analytics agents cannot reach the LLM. "
+            "Set OPENAI_API_KEY (plus OPENAI_API_BASE_URL and LLM_MODEL) in the API environment."
+        )
+
     # OpenRouter requires Referer + Title headers; harmless for other providers
     client = AsyncOpenAI(
         api_key=settings.openai_api_key,
