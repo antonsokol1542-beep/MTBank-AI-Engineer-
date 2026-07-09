@@ -153,6 +153,16 @@ docker compose up -d
 2. Пайплайны подгрузятся автоматически из `./pipelines/`
 3. В новом чате выберите модель **MTBank Analytics**
 
+### 5. Публичный деплой (живое демо, HTTPS)
+
+Полный стек разворачивается на VM с автоматическим HTTPS (Caddy). Пошаговая инструкция —
+[docs/DEPLOY.md](docs/DEPLOY.md) (Oracle Cloud Always Free / любой VPS):
+
+```bash
+export DEMO_DOMAIN=your-name.duckdns.org
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
 ---
 
 ## API
