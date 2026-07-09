@@ -3,7 +3,7 @@
 # Deploy the FastAPI backend to a Hugging Face Space (Docker SDK).
 #
 # HF Spaces free CPU tier = 16 GB RAM / 2 vCPU — enough for Whisper `medium`
-# (and pyannote diarization if HF_TOKEN is set), unlike the 512 MB Railway trial.
+# (and pyannote diarization if HF_TOKEN is set).
 #
 # Prerequisites:
 #   1. Create a Space on huggingface.co: New → Space → SDK: Docker → Blank.
@@ -32,7 +32,7 @@ cp -r "$ROOT/api/." "$WORK/"
 
 # Drop artefacts that must not ship
 find "$WORK" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
-rm -f "$WORK/railway.json" "$WORK/.env" 2>/dev/null || true
+rm -f "$WORK/.env" 2>/dev/null || true
 
 echo ">> Writing HF Space README (frontmatter: Docker SDK, port 8000)..."
 cat > "$WORK/README.md" <<EOF

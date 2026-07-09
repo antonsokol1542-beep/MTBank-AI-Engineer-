@@ -51,8 +51,8 @@ async def lifespan(app: FastAPI):
 
     # Load the Whisper/pyannote models in a background thread so the ASGI server
     # starts accepting connections immediately. Otherwise a blocking load (~1.5 GB
-    # model download on cold start) delays /health past the platform healthcheck
-    # window (e.g. Railway) and the deploy is marked unhealthy.
+    # model download on cold start) delays /health and can trip a platform
+    # healthcheck / readiness probe, marking the deploy unhealthy.
     def _load_model() -> None:
         try:
             _asr_service.load()
