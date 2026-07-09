@@ -32,6 +32,7 @@ class Pipeline:
                 for k, v in self.Valves.model_fields.items()
             }
         )
+        self._last_error = ""
 
     async def on_startup(self) -> None:
         print(f"[ASR Pipeline] Startup. API: {self.valves.API_BASE_URL}")
@@ -47,12 +48,23 @@ class Pipeline:
         body: dict,
     ) -> Union[str, Generator, Iterator]:
 
+        self._last_error = ""
+
         audio_url, audio_bytes, audio_suffix = self._extract_audio(body, messages, user_message)
 
         if audio_url:
             return self._transcribe_url(audio_url)
         if audio_bytes:
             return self._transcribe_bytes(audio_bytes, audio_suffix)
+
+        # A file was attached but could not be fetched — report why.
+        if self._last_error:
+            return (
+                "❌ Файл прикреплён, но скачать его из OpenWebUI не удалось.\n\n"
+                f"`{self._last_error}`\n\n"
+                "Проверьте валвы `OPENWEBUI_BASE_URL` и `OPENWEBUI_API_KEY` — "
+                "они обязательны, когда контейнеры не делят общий том."
+            )
 
         return (
             "📎 Прикрепите аудиофайл (WAV/MP3/OGG) или вставьте URL для транскрипции.\n\n"
@@ -152,18 +164,17 @@ class Pipeline:
                 except Exception as exc:
                     print(f"[ASR Pipeline] Disk read failed {path}: {exc}")
 
-        # 2. HTTP fallback with auth token
-        base = self.valves.OPENWEBUI_BASE_URL or OPENWEBUI_BASE_URL
+        # 2. HTTP fallback with auth token (required when there is no shared volume)
+        base = (self.valves.OPENWEBUI_BASE_URL or OPENWEBUI_BASE_URL).rstrip("/")
         url = f"{base}/api/v1/files/{file_id}/content"
         try:
-            with httpx.Client(timeout=60) as client:
+            with httpx.Client(timeout=60, follow_redirects=True) as client:
                 headers = {"Authorization": f"Bearer {token}"} if token else {}
                 resp = client.get(url, headers=headers)
-                if resp.status_code == 401 and token:
-                    resp = client.get(url)
                 resp.raise_for_status()
                 return resp.content, suffix
         except Exception as exc:
+            self._last_error = f"GET {url} → {type(exc).__name__}: {exc}"
             print(f"[ASR Pipeline] HTTP download failed {url}: {exc}")
             return None, suffix
 
