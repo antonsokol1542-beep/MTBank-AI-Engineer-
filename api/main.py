@@ -11,7 +11,9 @@ Endpoints:
 
 from __future__ import annotations
 
+import asyncio
 import tempfile
+import threading
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -29,6 +31,7 @@ from utils.logging import configure_logging, get_logger
 logger = get_logger(__name__)
 
 _asr_service: ASRService | None = None
+_asr_ready = threading.Event()  # set once the (heavy) model load finishes, success or fail
 SUPPORTED_AUDIO = {".wav", ".mp3", ".ogg", ".flac", ".m4a"}
 
 
@@ -45,8 +48,22 @@ async def lifespan(app: FastAPI):
         language=settings.whisper_language,
         hf_token=settings.hf_token,
     )
-    _asr_service.load()
-    logger.info("Application started")
+
+    # Load the Whisper/pyannote models in a background thread so the ASGI server
+    # starts accepting connections immediately. Otherwise a blocking load (~1.5 GB
+    # model download on cold start) delays /health past the platform healthcheck
+    # window (e.g. Railway) and the deploy is marked unhealthy.
+    def _load_model() -> None:
+        try:
+            _asr_service.load()
+            logger.info("ASR model loaded (background)")
+        except Exception:
+            logger.exception("ASR model failed to load")
+        finally:
+            _asr_ready.set()
+
+    threading.Thread(target=_load_model, name="asr-loader", daemon=True).start()
+    logger.info("Application started (ASR model loading in background)")
 
     yield
 
@@ -133,8 +150,15 @@ def _build_full_text(segments: list[dict]) -> str:
 
 async def _process_audio(file: UploadFile | None, audio_url: str | None) -> tuple[list, float, str]:
     """Shared audio processing: returns (segments, duration, full_text)."""
-    if not _asr_service or not _asr_service.is_loaded:
-        raise HTTPException(status_code=503, detail="ASR service not ready")
+    if not _asr_service:
+        raise HTTPException(status_code=503, detail="ASR service not initialised")
+
+    # On a cold start the model may still be loading in the background — wait for it
+    # (up to 5 min) instead of failing immediately, so the first request succeeds.
+    if not _asr_service.is_loaded:
+        await asyncio.to_thread(_asr_ready.wait, 300)
+        if not _asr_service.is_loaded:
+            raise HTTPException(status_code=503, detail="ASR model still loading or failed to load")
 
     if file is None and audio_url is None:
         raise HTTPException(status_code=400, detail="Provide 'file' or 'url'")
