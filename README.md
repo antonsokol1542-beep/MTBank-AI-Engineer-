@@ -153,15 +153,41 @@ docker compose up -d
 2. Пайплайны подгрузятся автоматически из `./pipelines/`
 3. В новом чате выберите модель **MTBank Analytics**
 
-### 5. Публичный деплой (живое демо, HTTPS)
+### 5. Публичный деплой и живое демо
 
-Полный стек разворачивается на VM с автоматическим HTTPS (Caddy). Пошаговая инструкция —
-[docs/DEPLOY.md](docs/DEPLOY.md) (Oracle Cloud Always Free / любой VPS):
+> **Ограничение бесплатного хостинга (важно).** Полный стек — это 3 контейнера
+> (OpenWebUI + Pipelines + FastAPI) + модель Whisper, суммарно **~3–4 ГБ RAM**.
+> Бесплатные PaaS/serverless (Railway free, Render free, HF Spaces free, Vercel) дают
+> ~512 МБ на сервис и **не запускают многоконтейнерный ML-стек целиком** — это
+> ограничение бесплатной инфраструктуры под ML-нагрузку, а не архитектуры проекта.
+> Поэтому есть два сценария демо ниже.
+
+**A. Быстрое демо REST API — Railway (бесплатно, HTTPS).**
+Разворачивается только FastAPI-бэкенд (`api/`, конфиг [api/railway.json](api/railway.json)).
+Даёт Swagger UI и `POST /analyze` по HTTPS.
+
+1. Railway → **Deploy from GitHub** → выберите репозиторий
+2. Service → Settings → **Root Directory = `api`**
+3. Variables: `OPENAI_API_KEY`, `OPENAI_API_BASE_URL`, `LLM_MODEL`,
+   `WHISPER_MODEL=small`, `WHISPER_COMPUTE_TYPE=int8`, `WHISPER_LANGUAGE=ru`
+4. Демо: `https://<app>.up.railway.app/docs`
+
+> ⚠️ На free-tier Railway (512 МБ) обязательно `WHISPER_MODEL=small` или `tiny` —
+> `medium` уходит в OOM (`Killed`). `HF_TOKEN` не задавайте: без него pyannote и torch
+> не грузятся (экономия ~1 ГБ), диаризация работает по эвристике.
+
+**B. Полное демо OpenWebUI — VM (docker-compose, HTTPS).**
+Весь стек с чатом OpenWebUI и `medium`-моделью — на VM с автоматическим HTTPS (Caddy).
+Тянет Oracle Cloud Always Free (24 ГБ RAM, бесплатно) или любой VPS от 4 ГБ.
+Пошаговая инструкция — **[docs/DEPLOY.md](docs/DEPLOY.md)**:
 
 ```bash
 export DEMO_DOMAIN=your-name.duckdns.org
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
+
+Локально полный стек с OpenWebUI поднимается одной командой `docker compose up -d`
+(см. шаги 1–4 выше) — это самый быстрый способ увидеть всю систему целиком.
 
 ---
 
