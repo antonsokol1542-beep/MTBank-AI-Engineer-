@@ -10,18 +10,14 @@ venv/
 dist/
 build/
 
-# Whisper / ML model cache
+# Whisper / ML model weights (downloaded at runtime into cache, never committed)
+# NOTE: do NOT ignore a bare `models/` dir — that is the app's Pydantic package (api/models).
 *.bin
 *.pt
 *.onnx
-models/
 .cache/
 
-# Test data — large audio files
-test_data/*.wav
-test_data/*.mp3
-test_data/*.ogg
-test_data/*.flac
+# Test audio (test_data/*.wav) IS committed on purpose — required by the assignment.
 
 # OS
 .DS_Store
