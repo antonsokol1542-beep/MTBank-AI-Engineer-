@@ -56,7 +56,13 @@ class BaseAgent(ABC):
         user_prompt: str,
         json_mode: bool = True,
     ) -> dict[str, Any]:
-        logger.info("LLM call", agent=self.name, model=self.model)
+        # JSON-log the agent INPUT (truncated to keep logs readable)
+        logger.info(
+            "agent_input",
+            agent=self.name,
+            model=self.model,
+            input=user_prompt[:500],
+        )
         kwargs: dict[str, Any] = {
             "model": self.model,
             "messages": [
@@ -70,7 +76,15 @@ class BaseAgent(ABC):
 
         response = await self.client.chat.completions.create(**kwargs)
         raw = response.choices[0].message.content or "{}"
+        parsed = _parse_json(raw, self.name)
 
-        logger.info("LLM response received", agent=self.name, tokens=response.usage.total_tokens)
+        # JSON-log the agent OUTPUT
+        tokens = getattr(getattr(response, "usage", None), "total_tokens", None)
+        logger.info(
+            "agent_output",
+            agent=self.name,
+            tokens=tokens,
+            output=parsed,
+        )
 
-        return _parse_json(raw, self.name)
+        return parsed

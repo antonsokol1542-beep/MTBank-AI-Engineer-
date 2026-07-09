@@ -86,8 +86,12 @@ def _make_fake_wav() -> bytes:
 
 @pytest.fixture
 def client():
+    # Patch ASRService at the class level so the lifespan startup handler
+    # (which does `_asr_service = ASRService(...); _asr_service.load()`)
+    # receives the mock instead of loading the real Whisper model.
+    mock_asr = _make_mock_asr()
     with (
-        patch("main._asr_service", _make_mock_asr()),
+        patch("main.ASRService", return_value=mock_asr),
         patch("main.run_analysis", new=AsyncMock(return_value=MOCK_ANALYSIS_STATE)),
     ):
         from main import app
