@@ -30,7 +30,18 @@ def load_reference(txt_path: Path) -> str:
 def transcribe(wav_path: Path, model_name: str) -> str:
     from faster_whisper import WhisperModel
     model = WhisperModel(model_name, device="cpu", compute_type="int8")
-    segments, _ = model.transcribe(str(wav_path), language="ru", vad_filter=True)
+    # Same params as the production ASR service (api/services/asr.py) so the
+    # WER numbers here match what the deployed system actually produces.
+    segments, _ = model.transcribe(
+        str(wav_path),
+        language="ru",
+        beam_size=1,
+        word_timestamps=False,
+        condition_on_previous_text=True,
+        max_new_tokens=150,
+        vad_filter=True,
+        vad_parameters={"min_silence_duration_ms": 300},
+    )
     text = " ".join(seg.text.strip() for seg in segments)
 
     import re
