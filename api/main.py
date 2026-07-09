@@ -21,6 +21,7 @@ from pathlib import Path
 import httpx
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from config import get_settings
 from models.schemas import AnalysisResult, HealthResponse, TranscribeResult, TranscriptSegment
@@ -84,6 +85,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ---------------------------------------------------------------------------
+# Root — redirect to interactive API docs (nicer than a bare 404)
+# ---------------------------------------------------------------------------
+
+@app.get("/", include_in_schema=False)
+async def root() -> RedirectResponse:
+    return RedirectResponse(url="/docs")
 
 
 # ---------------------------------------------------------------------------
