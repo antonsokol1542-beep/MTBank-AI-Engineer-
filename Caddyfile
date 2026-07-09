@@ -1,8 +1,0 @@
-# Caddy automatically provisions and renews a Let's Encrypt certificate
-# for $DEMO_DOMAIN and reverse-proxies all traffic to OpenWebUI.
-# WebSockets (used by OpenWebUI) are proxied transparently.
-
-{$DEMO_DOMAIN} {
-	encode gzip
-	reverse_proxy openwebui:8080
-}
